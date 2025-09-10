@@ -22,6 +22,7 @@ def crop_center(u, N):
     s = (len(u)-N)//2
     return u[s:s+N]
 
+# レンズアレイを波面図に描画する関数
 def draw_lensarray_lines(ax, z_plane, Lensarray, x_mm,
                          *, line_color="blue", line_w=2.0, line_alpha=0.9,
                          endpoint_color="white", endpoint_size=10):
@@ -77,14 +78,13 @@ wavelen=532*10**(-6) # 波長(mm)
 dx=1e-4 # サンプリング間隔
 dz=0.5e-2
 f=1 # レンズの焦点距離
-ff=f/2
 
 
 
 x=np.linspace(-N/2,N/2-1,N)
-xmmpos=0
+xmmpos=0 #物体点の位置(mm)
 print(int(xmmpos//dx))
-xpos=N//2 +int(xmmpos//dx) #物体点の分布位置 N//2は原点 大体N//2+6000以上にすると光束の分裂が発生
+xpos=N//2 +int(xmmpos//dx) #物体点の分布位置 N//2は原点
 print(xpos)
 #物体面の振幅分布
 u0=[0.0 for _ in range(len(x))]
@@ -99,9 +99,10 @@ LensNum=5 # レンズの枚数
 x_mm = (np.arange(N) - N//2) * dx
 D = 1.5
 
-Lensarray = np.zeros((LensNum, N))
-Lenscenterarray = np.zeros(LensNum)
+Lensarray = np.zeros((LensNum, N)) # レンズアレイの配列
+Lenscenterarray = np.zeros(LensNum) # レンズ中心位置の配列
 
+# レンズアレイの生成
 lenscenter=0
 for i in range(LensNum):
     Lensarray[i] = rect(x_mm , D , lenscenter)
@@ -127,7 +128,7 @@ ux=crop_center(ffp.ifft(fftu0*phase_func),N)
 
 amplitude_map = np.zeros((len(distance), N))
 
-#物体面と一枚目のレンズ面の間の波面を各距離で計算
+#物体面と一組目のレンズ面の間の波面を各距離で計算
 for i in range(len(distance)):
     if distance[i]>a:
         break
@@ -138,11 +139,9 @@ for i in range(len(distance)):
     amplitude_map[i, :] = np.abs(diffraction)**2
 
 
-
-
 fx1 = np.zeros_like(u0, dtype=np.complex128)
 fx2 = np.zeros_like(u0, dtype=np.complex128)
-
+# レンズの変換を適用
 for i in range(LensNum):
     P=Lensarray[i]
     xcenter=Lenscenterarray[i]
@@ -151,14 +150,13 @@ for i in range(LensNum):
             fx1[j]=ux[j]*np.exp(-1j*np.pi*(x[j]*dx-xcenter)**2/(wavelen*f))
             fx2[j]=fx1[j]*np.exp(-1j*np.pi*(x[j]*dx-xcenter)**2/(wavelen*f))
 
-
+#一組目のレンズと二組目のレンズの間の波面を各距離で計算
 for j in range(LensNum):
     P=Lensarray[j]
     fx=fx2*P
     fpad=pad(fx,Npad)
     fftfx=ffp.fft(fpad)
-    print("one Lenz through")
-    #一枚目のレンズと二枚目のレンズの間の波面を各距離で計算
+    
     for i in range(len(distance)):
         if not a<distance[i]<a+b:
             continue
@@ -169,7 +167,7 @@ for j in range(LensNum):
         amplitude_map[i, :] += P*(np.abs(diffraction)**2)
 
 gx = np.zeros_like(u0, dtype=np.complex128)
-# 各距離で角スペクトル法による伝搬計算draw_lens_bands(ax1, a,    Px1, x1, thickness_ratio=0.012, alpha=0.30)
+#二組目のレンズ前面の波面計算
 for i in range(LensNum):
     P=Lensarray[i]
     fx=fx2*P
@@ -181,7 +179,7 @@ for i in range(LensNum):
 
 hx1 = np.zeros_like(gx, dtype=np.complex128)
 hx2 = np.zeros_like(gx, dtype=np.complex128)
-
+# レンズの変換を適用
 for i in range(LensNum):
     P=Lensarray[i]
     xcenter=Lenscenterarray[i]
@@ -194,9 +192,7 @@ for i in range(LensNum):
 padhx=pad(hx2,Npad)
 ffthx=ffp.fft(padhx)
 
-print("two Lenz through")
-
-#二枚目のレンズと結像面の間の波面を各距離で計算
+#二組目のレンズと結像面の間の波面を各距離で計算
 for i in range(len(distance)):
     if distance[i]<a+b:
         continue
@@ -226,13 +222,13 @@ fig1, ax1 = plt.subplots(figsize=(16, 8))
 extent = [distance[0], distance[-1], x1[0], x1[-1]]
 I = amplitude_map
 I /= I.max()
-
 im = ax1.imshow(np.log10(I + 1e-12).T, extent=extent, origin='lower', aspect='auto', cmap='hot', vmin=-6, vmax=0)
-#im = ax1.imshow(amplitude_map.T, extent=extent, origin='lower', aspect='auto', cmap='gray')  # カラーマップを 'gray' に変更
 draw_lensarray_lines(ax1, a, Lensarray, x1,
                      line_color="blue", line_w=2.0, line_alpha=0.95,
-                     endpoint_color="white", endpoint_size=10)
-
+                     endpoint_color="white", endpoint_size=2)
+draw_lensarray_lines(ax1, a+b, Lensarray, x1,
+                     line_color="blue", line_w=2.0, line_alpha=0.95,
+                     endpoint_color="white", endpoint_size=2)
 ax1.set_xlabel("$z$")
 ax1.set_ylabel("$x$") 
 fig1.colorbar(im, ax=ax1, label="Amplitude Intensity")
