@@ -77,7 +77,7 @@ Npad=4096*16 # パディングサイズ
 wavelen=532*10**(-6) # 波長(mm)
 dx=1e-4 # サンプリング間隔
 dz=0.5e-2
-f=1 # レンズの焦点距離
+f=1/2 # レンズの焦点距離
 
 
 
@@ -140,20 +140,19 @@ for i in range(len(distance)):
 
 
 fx1 = np.zeros_like(u0, dtype=np.complex128)
-fx2 = np.zeros_like(u0, dtype=np.complex128)
 # レンズの変換を適用
 for i in range(LensNum):
     P=Lensarray[i]
     xcenter=Lenscenterarray[i]
     for j in range(N):
         if P[j]==1:
-            fx1[j]=ux[j]*np.exp(-1j*np.pi*(x[j]*dx-xcenter)**2/(wavelen*f))
-            fx2[j]=fx1[j]*np.exp(-1j*np.pi*(x[j]*dx-xcenter)**2/(wavelen*f))
+            r=x[j]*dx-xcenter
+            fx1[j]=ux[j]*np.exp(-1j*2*np.pi*(np.sqrt(f**2+r**2)-f)/(wavelen))
 
 #一組目のレンズと二組目のレンズの間の波面を各距離で計算
 for j in range(LensNum):
     P=Lensarray[j]
-    fx=fx2*P
+    fx=fx1*P
     fpad=pad(fx,Npad)
     fftfx=ffp.fft(fpad)
     
@@ -170,7 +169,7 @@ gx = np.zeros_like(u0, dtype=np.complex128)
 #二組目のレンズ前面の波面計算
 for i in range(LensNum):
     P=Lensarray[i]
-    fx=fx2*P
+    fx=fx1*P
     fpad=pad(fx,Npad)
     fftfx=ffp.fft(fpad)
     phase_func=np.zeros(len(nux),dtype=np.complex128)
@@ -185,11 +184,11 @@ for i in range(LensNum):
     xcenter=Lenscenterarray[i]
     for j in range(N):
         if P[j]==1:
-            hx1[j]=gx[j]*np.exp(-1j*np.pi*(x[j]*dx-xcenter)**2/(wavelen*f))
-            hx2[j]=hx1[j]*np.exp(-1j*np.pi*(x[j]*dx-xcenter)**2/(wavelen*f))
+            r=x[j]*dx-xcenter
+            hx1[j]=gx[j]*np.exp(-1j*2*np.pi*(np.sqrt(f**2+r**2)-f)/(wavelen))
 
 
-padhx=pad(hx2,Npad)
+padhx=pad(hx1,Npad)
 ffthx=ffp.fft(padhx)
 
 #二組目のレンズと結像面の間の波面を各距離で計算

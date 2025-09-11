@@ -2,7 +2,7 @@ import numpy as np
 from scipy import fftpack as ffp
 import matplotlib.pyplot as plt
 
-pairlenz=True # True: 対物レンズと接眼レンズの2枚レンズ系 False: 単レンズ系
+pairlenz=False # True: 対物レンズと接眼レンズの2枚レンズ系 False: 単レンズ系
 
 
 def rect(x):
@@ -23,10 +23,10 @@ N=4096*16 # サンプリング数
 Npad=4096*16 # パディングサイズ
 wavelen=532*10**(-6) # 波長(mm)
 dx=1e-4 # サンプリング間隔
-dz=0.5e-2
+dz=1e-2
 print("max x",N*dx/2)
 print(dx)
-f=1 # レンズの焦点距離
+f=1/2 # レンズの焦点距離
 if pairlenz:
     ff=f/2
 else:
@@ -41,9 +41,9 @@ print(xpos)
 #物体面の振幅分布
 u0=[0.0 for _ in range(len(x))]
 u0[xpos]=1
-a=2 #1枚目のレンズと物体の距離
+a=1 #1枚目のレンズと物体の距離
 b=2 #レンズ間の距離
-c=2 #2枚目のレンズと像の距離
+c=1 #2枚目のレンズと像の距離
 
 distance = np.arange(0, a+b+c + dz, dz) #レンズからの距離
 
