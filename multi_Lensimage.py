@@ -76,13 +76,13 @@ N=4096*32 # サンプリング数
 Npad=4096*16 # パディングサイズ
 wavelen=532*10**(-6) # 波長(mm)
 dx=1e-4 # サンプリング間隔
-dz=0.5e-2
+dz=5e-2
 f=1/2 # レンズの焦点距離
 
 
 
 x=np.linspace(-N/2,N/2-1,N)
-xmmpos=0 #物体点の位置(mm)
+xmmpos=1.5 #物体点の位置(mm)
 print(int(xmmpos//dx))
 xpos=N//2 +int(xmmpos//dx) #物体点の分布位置 N//2は原点
 print(xpos)
@@ -90,9 +90,9 @@ print(xpos)
 u0=[0.0 for _ in range(len(x))]
 u0[xpos]=1
 a=2 #1枚目のレンズと物体の距離
-b=4/3 #レンズ間の距離
+b=1/(1/f-1/a ) + 1/(1/f-1/a) #レンズ間の距離
 c=2 #2枚目のレンズと像の距離
-
+print("b=",b)
 distance = np.arange(0, a+b+c + dz, dz) #レンズからの距離
 
 LensNum=5 # レンズの枚数
